@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-import pymysql
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,11 +71,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'scms.wsgi.application'
 
+MESSAGE_TAGS={
+    messages.ERROR:"danger"
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-pymysql.install_as_MySQLdb()
+
 
 DATABASES = {
     'default': {
@@ -124,3 +127,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILE_DIR=[BASE_DIR/"static"]
+STATIC_ROOT=BASE_DIR/"assets"
+
+MEDIA_URL="media/"
+MEDIA_ROOT=BASE_DIR/"media"
