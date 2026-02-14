@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h3>Edit Role for {{ user.username }}</h3>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Role</label>
+            <select name="role" class="form-control">
+                <option value="admin" {% if user.profile.role == "admin" %}selected{% endif %}>Admin</option>
+                <option value="teacher" {% if user.profile.role == "teacher" %}selected{% endif %}>Teacher</option>
+                <option value="staff" {% if user.profile.role == "staff" %}selected{% endif %}>Staff</option>
+            </select>
+        </div>
+        <button class="btn btn-success">Update Role</button>
+        <a href="{% url 'user_role_management' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
