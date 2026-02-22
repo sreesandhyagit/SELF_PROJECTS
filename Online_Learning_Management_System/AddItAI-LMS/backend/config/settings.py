@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,7 +49,7 @@ INSTALLED_APPS = [
 
     # Local apps (IMPORTANT → use apps.appname)
 
-    "apps.accounts",
+    "apps.accounts.apps.AccountsConfig", # using signals.py
     "apps.categories",
     "apps.courses",
     "apps.lessons",
@@ -129,6 +130,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'AUTH_HEADER_TYPES': ('Bearer',)
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
