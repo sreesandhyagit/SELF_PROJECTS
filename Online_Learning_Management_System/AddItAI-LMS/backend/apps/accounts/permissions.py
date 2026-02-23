@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from accounts.models import User
+from .models import User
 
 class IsInstructor(BasePermission):
     def has_permission(self, request, view):
