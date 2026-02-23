@@ -121,9 +121,14 @@ class CreateInstructorRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        #check if already requested
-        if InstructorRequest.objects.filter(user=request.user).exists():
-            return Response({"error":"Request already submitted"},status=400)
+
+        # check if already an instructor
+        if request.user.is_instructor:
+            return Response({"error":"Already an instructor"},status=400)
+        
+        # check if already requested
+        if InstructorRequest.objects.filter(user=request.user,status="pending").exists():
+            return Response({"error":"Request already pending"},status=400)
         
         serializer = InstructorRequestSerializer(data=request.data)
         if serializer.is_valid():
@@ -138,6 +143,14 @@ class InstructorRequestListView(APIView):
 
     def get(self,request):
         requests = InstructorRequest.objects.all()
+
+        status_filter = request.query_params.get("status")
+        if status_filter:
+            valid_status = [choice[0] for choice in InstructorRequest.Status.choices]
+            if status_filter not in valid_status:
+                return Response({"error":"Invalid status"},status=400)            
+            requests = requests.filter(status=status_filter)
+
         serializer = InstructorRequestSerializer(requests, many=True)
         return Response(serializer.data)
 
@@ -153,7 +166,7 @@ class ReviewInstructorRequestView(APIView):
         
         status_value = request.data.get("status")
 
-        if status_value not in ["approved", "rejected"]:
+        if status_value not in [InstructorRequest.Status.APPROVED, InstructorRequest.Status.REJECTED]:
             return Response({"error":"Invalid status"}, status=400)
         
         req.status = status_value

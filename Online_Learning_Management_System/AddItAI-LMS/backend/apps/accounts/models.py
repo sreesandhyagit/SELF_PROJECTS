@@ -7,11 +7,16 @@ from django.utils import timezone
 # identity
 
 class User(AbstractUser):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
     class Role(models.TextChoices):  # TextChoices is Cleaner and safer than tuple choices.
         ADMIN = "ADMIN", "Admin"
         INSTRUCTOR = "INSTRUCTOR", "Instructor"
         STUDENT = "STUDENT", "Student"
+
+    email = models.EmailField(unique=True,db_index=True)
+    username = models.CharField(max_length=150, unique=True)
 
     role = models.CharField(max_length = 20,choices = Role.choices, default=Role.STUDENT)
     bio = models.TextField(blank=True, null=True)
@@ -22,6 +27,10 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username}({self.get_role_display()})"   
     
+    def save(self,*args,**kwargs):
+        if self.email:
+            self.email = self.email.lower()
+        super().save(*args,**kwargs)        
 
     # helper properties for role checking
 
@@ -68,8 +77,6 @@ class InstructorProfile(models.Model):
             return "Expert"
         
 
-
-
 class InstructorRequest(models.Model):
 
     class Status(models.TextChoices):
@@ -84,7 +91,22 @@ class InstructorRequest(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='reviewed_requests')
 
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user'],name='unique_instructor_request_per_user')]
+        ordering = ['-submitted_at']
+
     def save(self, *args, **kwargs):
+
+        # prevent duplicate pending requests
+        if not self.pk and self.user.instructor_requests.filter(status="pending").exists():
+            raise ValueError("You already have a pending request")
+        
+        # set reviewed time
+        if self.status in [self.Status.APPROVED, self.Status.REJECTED]:
+            if not self.reviewed_at:
+                self.reviewed_at= timezone.now()
+
+        # approval 
         if self.status == self.Status.APPROVED:
             if not self.user.is_instructor:
                 self.user.role = User.Role.INSTRUCTOR
