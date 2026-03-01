@@ -1,5 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,6 +9,7 @@ from rest_framework.filters import SearchFilter,OrderingFilter
 from apps.accounts.permissions import IsInstructor,IsAdmin
 from .models import Course
 from .serializers import CourseSerializer
+from apps.lessons.serializers import SectionSerializer
 
 # Create your views here.
 
@@ -37,6 +39,8 @@ class CourseViewSet(ModelViewSet):
             return [IsAuthenticated(),IsInstructor()]
         elif self.action in ["approve_course","reject_course","publish_course"]:
             return [IsAuthenticated(),IsAdmin()]        
+        elif self.action == "add_section":
+            return [IsAuthenticated(),IsInstructor()]
         return [AllowAny()]
 
     def perform_create(self,serializer):
@@ -45,13 +49,15 @@ class CourseViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset=Course.objects.all().prefetch_related("sections__lessons")
+
         if user.is_authenticated:
             if user.is_instructor:
-                return Course.objects.filter(instructor=user)
+                return queryset.filter(instructor=user)
             elif user.is_admin:
-                return Course.objects.all()
+                return queryset
             
-        return Course.objects.filter(status=Course.Status.APPROVED,is_published=True)
+        return queryset.filter(status=Course.Status.APPROVED,is_published=True)
 
     #approve
     @action(detail=True,methods=["post"])
@@ -83,3 +89,15 @@ class CourseViewSet(ModelViewSet):
         return Response({
             "message":"Course published" if course.is_published else "Course unpublished"
             })
+    
+    @action(detail=True,methods=["post"])
+    def add_section(self,request,slug=None):
+        course=self.get_object()
+        if course.instructor!=request.user:
+            raise PermissionDenied("Not allowed")
+        serializer=SectionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(course=course)
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
