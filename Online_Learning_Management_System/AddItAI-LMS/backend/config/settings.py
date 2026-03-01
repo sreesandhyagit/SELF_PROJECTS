@@ -21,7 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gv%&4q%armi3#l6v#34#t!$bv9gpa1s4w8ftm9yhar%p=b@x&n'
+# SECRET_KEY = 'django-insecure-gv%&4q%armi3#l6v#34#t!$bv9gpa1s4w8ftm9yhar%p=b@x&n'
+SECRET_KEY = 'hardcoded'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "rest_framework_simplejwt",
+    "django_filters",
 
     # Local apps (IMPORTANT → use apps.appname)
 
@@ -134,6 +136,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS':[
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+    'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE':10
 }
 
 SIMPLE_JWT = {

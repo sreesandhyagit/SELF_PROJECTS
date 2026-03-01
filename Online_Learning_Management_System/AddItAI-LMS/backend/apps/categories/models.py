@@ -10,10 +10,20 @@ class Category(models.Model):
     description = models.TextField(blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # prevent duplicate slug
+    def generate_unique_slug(self):
+        base_slug = slugify(self.name)
+        slug = base_slug
+        counter = 1
+        while Category.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        return slug
+
     def save(self,*args,**kwargs):
         #auto generate slug
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = self.generate_unique_slug()
         super().save(*args,**kwargs)
 
     def __str__(self):

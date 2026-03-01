@@ -84,17 +84,24 @@ class ToggleUserActiveView(APIView):
 class InstructorProfileView(APIView):
     permission_classes = [IsAuthenticated]
     
-    def get(self,request):  
-        # check role     
-        if not request.user.is_instructor:
-            return Response({"error":"Only instructors allowed"},status=403)  
+    def get(self,request): 
+        # admin view any profile
+        if request.user.is_admin:
+            user_id = request.query_params.get("user_id")  
+            if not user_id:
+                return Response({"error":"user_id is required"},status=400)
+            try:
+                profile = InstructorProfile.objects.get(user__id=user_id)            
+            except InstructorProfile.DoesNotExist:
+                return Response({"error":"Profile not found"},status=404)
+        elif request.user.is_instructor: # instructor view own profile
+            try:
+                profile=request.user.instructor_profile
+            except InstructorProfile.DoesNotExist:
+                return Response({"error":"Profile not found"},status=404)
+        else:
+            return Response({"error":"Not allowed"},status=403)  
               
-        #get profile
-        try:
-            profile = request.user.instructor_profile
-        except InstructorProfile.DoesNotExist:
-            return Response({"error":"Profile not found"}, status=404)
-        
         serializer = InstructorProfileSerializer(profile)
         return Response(serializer.data)
     
