@@ -1,6 +1,9 @@
 from django.db import models
-from apps.accounts.models import User
 from apps.lessons.models import Lesson
+from django.conf import settings
+
+User = settings.AUTH_USER_MODEL
+
 
 # Create your models here.
 

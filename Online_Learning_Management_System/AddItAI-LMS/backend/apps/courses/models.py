@@ -52,7 +52,7 @@ class Course(models.Model):
 
     def save(self,*args,**kwargs):
         #auto assign course type
-        if self.price ==0:
+        if self.price == 0:
             self.course_type="free"
         elif self.course_type != "certification":
             self.course_type = "paid"            
