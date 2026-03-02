@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils.text import slugify
 import re
+from django.conf import settings
 
+User = settings.AUTH_USER_MODEL
 
 class Section(models.Model):
     course = models.ForeignKey("courses.Course",on_delete=models.CASCADE,related_name="sections")
@@ -25,6 +27,8 @@ class Section(models.Model):
 def extract_video_id(url):
     match = re.search(r"(?:v=|youtu\.be/)([a-zA-Z0-9_-]+)",url)
     return match.group(1) if match else None
+
+#----------------------------------------------------------------------------------------------------------
 
 class Lesson(models.Model):
     section =models.ForeignKey("lessons.Section",on_delete=models.CASCADE,related_name="lessons")
@@ -60,4 +64,21 @@ class Lesson(models.Model):
 
     def __str__(self):
         return self.title
+    
+#-------------------------------------------------------------------------------------------------------------
+
+class LessonProgress(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
+    lesson=models.ForeignKey(Lesson,on_delete=models.CASCADE)
+    is_completed=models.BooleanField(default=False)
+    watched_duration=models.PositiveIntegerField(default=0) # seconds
+    last_watched_at=models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together=["user","lesson"]
+
+    def __str__(self):
+        return f"{self.user} - {self.lesson}"
+    
+    
 

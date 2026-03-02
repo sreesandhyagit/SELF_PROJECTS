@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Section,Lesson
+from .models import Section,Lesson,LessonProgress
 import re
 
 def convert_to_seconds(time_str):
@@ -9,11 +9,14 @@ def convert_to_seconds(time_str):
     except:
         raise serializers.ValidationError("Invalid format. Use HH:MM:SS")
     
+#------------------------------------------------------------------------------------------------------------------
 
 class SectionSerializer(serializers.ModelSerializer):
     class Meta:
         model=Section
         fields="__all__"
+
+#----------------------------------------------------------------------------------------------------------------------
 
 class LessonSerializer(serializers.ModelSerializer):
     duration_input=serializers.CharField(write_only=True)
@@ -59,9 +62,27 @@ class LessonSerializer(serializers.ModelSerializer):
             instance.duration=convert_to_seconds(duration_input)
         return super().update(instance, validated_data)
 
+#-----------------------------------------------------------------------------------------------------------------
+
 class SectionWithLessonsSerializer(serializers.ModelSerializer):
     lessons=LessonSerializer(many=True,read_only=True)
     class Meta:
         model=Section
         fields=["id","title","order","lessons"]
+        
+
+#------------------------------------------------------------------------------------------------------------
+
+class LessonProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=LessonProgress
+        fields=[
+            "id",
+            "lesson",
+            "is_completed",
+            "watched_duration",
+            "last_watched_at"
+        ]
+        read_only_fields=["last_watched_at"]
+        
         
