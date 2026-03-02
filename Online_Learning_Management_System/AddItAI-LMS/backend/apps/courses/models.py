@@ -19,6 +19,12 @@ class Course(models.Model):
         PENDING = "PENDING","Pending Approval"
         APPROVED = "APPROVED","Approved"
         REJECTED = "REJECTED","Rejected"
+
+    class CourseType(models.TextChoices):
+        FREE = "free","Free"
+        PAID = "paid","Paid"
+        CERTIFICATION="certification","Certification"
+
         
     instructor = models.ForeignKey(User,on_delete=models.CASCADE, related_name="courses")
     category = models.ForeignKey(Category,on_delete=models.CASCADE,related_name="courses")
@@ -29,12 +35,13 @@ class Course(models.Model):
     description = models.TextField()
     thumbnail = models.ImageField(upload_to="courses/",blank=True,null=True)
 
+    course_type=models.CharField(max_length=20, choices=CourseType.choices,default=CourseType.FREE)
     price = models.DecimalField(max_digits=8,decimal_places=2,default=0.00)
+
     duration = models.IntegerField(help_text="Duration in Minutes",default=0)
-
     level = models.CharField(max_length=20,choices=Level.choices,default=Level.BEGINNER)
-    language = models.CharField(max_length=50,default="English")
 
+    language = models.CharField(max_length=50,default="English")
     preview_video = models.URLField(blank=True,null=True)
     
     is_published = models.BooleanField(default=False)
@@ -44,6 +51,11 @@ class Course(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self,*args,**kwargs):
+        #auto assign course type
+        if self.price ==0:
+            self.course_type="free"
+        elif self.course_type != "certification":
+            self.course_type = "paid"            
         #generate unique slug 
         if not self.slug:
             base_slug = slugify(self.title)
@@ -60,7 +72,7 @@ class Course(models.Model):
     
     @property
     def is_free(self):
-        return self.price==0
+        return self.course_type == "free"
     
     
     

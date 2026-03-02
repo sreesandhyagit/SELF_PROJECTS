@@ -25,7 +25,8 @@ urlpatterns = [
     path('api/', include('apps.accounts.urls')),
     path('api/categories/', include('apps.categories.urls')),
     path('api/courses/',include('apps.courses.urls')),
-    path('api/',include("apps.lessons.urls"))
+    path('api/',include("apps.lessons.urls")),
+    path('api/',include('apps.progress.urls'))
 
 ]
 

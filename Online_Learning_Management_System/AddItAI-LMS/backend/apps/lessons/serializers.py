@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Section,Lesson,LessonProgress
+from .models import Section,Lesson
 import re
 
 def convert_to_seconds(time_str):
@@ -69,20 +69,7 @@ class SectionWithLessonsSerializer(serializers.ModelSerializer):
     class Meta:
         model=Section
         fields=["id","title","order","lessons"]
-        
 
-#------------------------------------------------------------------------------------------------------------
 
-class LessonProgressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=LessonProgress
-        fields=[
-            "id",
-            "lesson",
-            "is_completed",
-            "watched_duration",
-            "last_watched_at"
-        ]
-        read_only_fields=["last_watched_at"]
         
         
