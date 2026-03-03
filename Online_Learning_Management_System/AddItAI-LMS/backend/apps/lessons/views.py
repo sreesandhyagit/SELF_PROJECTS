@@ -55,6 +55,39 @@ class SectionViewSet(ModelViewSet):
             return Response(serializer.data,status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=False,methods=["get"])
+    def section_progress(self, request):
+        course_id=request.query_params.get("course_id")
+
+        if not course_id:
+            return Response({"error":"course_id required"},status=400)
+        
+        sections=Section.objects.filter(course_id=course_id).annotate(
+            total_lessons=Count("lessons"),
+            completed_lessons=Count(
+                "lessons__progress",
+                filter=Q(
+                    lessons__progress__user=request.user,
+                    lessons__progress__is_completed=True
+                )
+            )
+        )
+        data=[]
+        for section in sections:
+            progress=(
+                section.completed_lessons /section.total_lessons * 100
+                if section.total_lessons > 0 else 0
+            )
+            data.append({
+                "section_id":section.id,
+                "section_title":section.title,
+                "total_lessons":section.total_lessons,
+                "completed_lessons":section.completed_lessons,
+                "progress":round(progress,2)
+            })
+            return Response(data)
+        
+    
 #----------------------------------------------------------------------------------------------------------------------
 class LessonViewSet(ModelViewSet):
     queryset=Lesson.objects.all().order_by("order")

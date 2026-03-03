@@ -39,8 +39,11 @@ class LessonProgressViewSet(ModelViewSet):
     @action(detail=True,methods=["post"])
     def mark_complete(self,request,pk=None):
         progress=self.get_object()
+        lesson=progress.lesson
+
         if progress.watched_duration >= lesson.duration:
             progress.is_completed=True
+
         progress.save()
         return Response({"message":"Lesson marked as completed"})
     
@@ -60,13 +63,22 @@ class LessonProgressViewSet(ModelViewSet):
     def course_progress(self,request):
         course_id=request.query_params.get("course_id")
         if not course_id:
-            return Response({"error":"course_id required"},status=400)
-        lessons=Lesson.objects.filter(section__course_id=course_id)
-        total_lessons=lessons.count()
-        completed=LessonProgress.objects.filter(user=request.user,lesson__in=lessons,is_completed=True).count()
-        progress=(completed / total_lessons * 100) if total_lessons > 0 else 0
+            return Response({"error":"course_id required"},status=400)        
+
+        lessons=Lesson.objects.filter(section__course__id=course_id).aggregate(
+            total_lessons=Count("id"),
+            completed_lessons=Count(
+                "progress",
+                filter=Q(progress__user=request.user,progress__is_completed=True),
+                distinct=True
+            )
+        )
+        total=lessons["total_lessons"]
+        completed=lessons["completed_lessons"]
+        progress=(completed / total * 100) if total > 0 else 0
+
         return Response({
-            "total_lessons":total_lessons,
+            "total_lessons":total,
             "completed_lessons":completed,
             "progress_percentage":round(progress,2)
          })
@@ -87,7 +99,9 @@ class LessonProgressViewSet(ModelViewSet):
                 user=request.user,
                 is_completed=True
             ).order_by("-last_watched_at").first()
-            return Response({"message":"No resume data"})
+
+            if not last:
+                return Response({"message":"No resume data"})
         
         return Response({
             "lesson_id":last.lesson.id,

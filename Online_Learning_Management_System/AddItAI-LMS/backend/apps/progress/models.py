@@ -9,7 +9,7 @@ User = settings.AUTH_USER_MODEL
 
 class LessonProgress(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
-    lesson=models.ForeignKey(Lesson,on_delete=models.CASCADE)
+    lesson=models.ForeignKey(Lesson,on_delete=models.CASCADE,related_name="progress")
     is_completed=models.BooleanField(default=False)
     watched_duration=models.PositiveIntegerField(default=0) # seconds
     last_watched_at=models.DateTimeField(auto_now=True)
