@@ -19,6 +19,8 @@ class LessonProgressViewSet(ModelViewSet):
     
     def create(self, request,*args,**kwargs):
         lesson=request.data.get("lesson")
+        if not Lesson.objects.filter(id=lesson).exists():
+            return Response({"error":"Invalid lesson"},status=400)
         try:
             obj = LessonProgress.objects.get(user=request.user,lesson_id=lesson)
             #update existing
@@ -37,7 +39,8 @@ class LessonProgressViewSet(ModelViewSet):
     @action(detail=True,methods=["post"])
     def mark_complete(self,request,pk=None):
         progress=self.get_object()
-        progress.is_completed=True
+        if progress.watched_duration >= lesson.duration:
+            progress.is_completed=True
         progress.save()
         return Response({"message":"Lesson marked as completed"})
     
@@ -75,13 +78,21 @@ class LessonProgressViewSet(ModelViewSet):
             user=request.user,
             watched_duration__gt=0,
             is_completed=False
-        ).order_by("-last_watched_at").first()
+        ).select_related("lesson","lesson__section__course") \
+        .order_by("-last_watched_at") \
+        .first()
         
         if not last: 
+            last=LessonProgress.objects.filter(
+                user=request.user,
+                is_completed=True
+            ).order_by("-last_watched_at").first()
             return Response({"message":"No resume data"})
         
         return Response({
             "lesson_id":last.lesson.id,
             "lesson_title":last.lesson.title,
-            "watched_duration":last.watched_duration
+            "course":last.lesson.section.course.title,
+            "watched_duration":last.watched_duration,
+            "video_url":last.lesson.youtube_url
         })

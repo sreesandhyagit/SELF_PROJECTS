@@ -16,6 +16,7 @@ class LessonProgress(models.Model):
 
     class Meta:
         unique_together=["user","lesson"]
+        indexes=[models.Index(fields=["user","last_watched_at"]),]
 
     def __str__(self):
         return f"{self.user} - {self.lesson}"

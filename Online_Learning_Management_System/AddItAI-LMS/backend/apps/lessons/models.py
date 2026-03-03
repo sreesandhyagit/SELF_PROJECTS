@@ -50,6 +50,10 @@ class Lesson(models.Model):
         return f"{hours}:{minutes:02}:{seconds:02}"
     
     def save(self,*args,**kwargs):
+        
+        if self.order == 1:
+            self.is_preview = True
+
         if not self.slug:
             self.slug=slugify(self.title)
 

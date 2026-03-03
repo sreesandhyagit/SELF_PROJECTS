@@ -6,7 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Count,Q
 from .models import Section,Lesson
+from apps.progress.models import LessonProgress
+from apps.courses.models import Course
 from .serializers import SectionSerializer,LessonSerializer
+from apps.enrollments.models import Enrollment
 
 # Create your views here.
 
@@ -60,7 +63,19 @@ class LessonViewSet(ModelViewSet):
 
     def get_queryset(self):
         user=self.request.user
-        return Lesson.objects.filter(section__course__instructor=user)
+        #allow player endpoint to access all lessons
+        if self.action == "player":
+            return Lesson.objects.all()
+        
+        #instructor - their lessons
+        if user.is_instructor:
+            return Lesson.objects.filter(section__course__instructor=user)
+        
+        #students -published courses
+        return Lesson.objects.filter(
+            section__course__is_published=True,
+            section__course__status="APPROVED"
+        )
     
     def perform_create(self, serializer):
         section=serializer.validated_data.get("section")
@@ -81,7 +96,23 @@ class LessonViewSet(ModelViewSet):
 
     @action(detail=True,methods=["get"])
     def player(self,request,pk=None):
-        lesson=self.get_object()
+        lesson=self.get_object()        
+        course=lesson.section.course
+        user=request.user
+
+        #block unpublished course
+        if not course.is_published or course.status != "APPROVED":
+            return Response({"error":"Course not available"},status=403)
+        
+        #paid course check  
+        if not lesson.is_preview and not course.is_free:
+                is_enrolled=Enrollment.objects.filter(user=user,course=course).exists()
+                if not is_enrolled:
+                    return Response({"error":"You must enroll to access this lesson"},status=403)
+
+          
+        #navigation part
+
         section=lesson.section
 
         prev_lesson=section.lessons.filter(order__lt=lesson.order).order_by("-order").first()
@@ -97,6 +128,13 @@ class LessonViewSet(ModelViewSet):
             next_section=lesson.section.course.sections.filter(order__gt=section.order).order_by("order").first()
             if next_section:
                 next_lesson=next_section.lessons.order_by("order").first()
+
+        #unlock next lesson only if completed
+        if next_lesson:
+            is_completed=LessonProgress.objects.filter(user=user,lesson=lesson,is_completed=True).exists()
+
+            if not is_completed:
+                next_lesson=None 
 
         data={
             "current_lesson":{
@@ -114,10 +152,81 @@ class LessonViewSet(ModelViewSet):
                 "id":next_lesson.id,
                 "title":next_lesson.title,
                 "youtube_url":next_lesson.youtube_url
-            } if next_lesson else None,            
-        }
-        return Response(data)
+            } if next_lesson else None
+        }  
 
+        return Response(data)
+    
+    @action(detail=True,methods=["post"])
+    def complete(self,request,pk=None):
+        lesson=self.get_object()
+        user=request.user        
+        course=lesson.section.course
+
+        #block unpublished course
+        if not course.is_published or course.status != "APPROVED":
+            return Response({"error":"Course not available"},status=403)
+        
+        #prevent unauthorized completeion
+        if not lesson.is_preview and not course.is_free:
+            is_enrolled=Enrollment.objects.filter(user=user,course=course).exists()
+            if not is_enrolled:
+                return Response({"error":"Enroll first"},status=403)
+        
+        progress, created =LessonProgress.objects.get_or_create(user=user,lesson=lesson)
+
+        progress.is_completed=True
+        progress.save()
+
+        return Response({"message":"Lesson Completed"})
+
+    @action(detail=True,methods=["post"])
+    def next_lesson(self,request,pk=None):
+        lesson=self.get_object()
+        section=lesson.section
+
+        next_lesson=section.lessons.filter(order__gt=lesson.order).order_by("order").first()
+        if not next_lesson:
+            next_section=lesson.section.course.sections.filter(
+                order__gt=section.order
+            ).order_by("order").first()
+
+            if next_section:
+                next_lesson=next_section.lessons.order_by("order").first()
+        
+        if not next_lesson:
+            return Response({"message":"Course Completed"})
+        
+        return Response({
+            "next_lesson_id":next_lesson.id,
+            "title":next_lesson.title,
+            "video_url":next_lesson.youtube_url
+        })
+
+    @action(detail=False,methods=["get"])
+    def recommendations(self,request):
+        #get users completed lessons
+        completed_lessons=LessonProgress.objects.filter(
+            user=request.user,
+            is_completed=True
+        ).values_list("lesson__section__course__category", flat=True)
+
+        #recommend courses from same category
+        courses =Course.objects.filter(
+            category__in=completed_lessons,
+            is_published=True,
+            status="APPROVED"
+        ).distinct()[:5]
+
+        data=[
+            {
+                "id":c.id,
+                "title":c.title,
+                "price":c.price
+            }
+            for c in courses
+        ]
+        return Response(data)
     
 
 
