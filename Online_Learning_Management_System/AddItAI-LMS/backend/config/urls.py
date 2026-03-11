@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/',include('apps.enrollments.urls')),
     
     path("api/", include("apps.reviews.urls")),
+    path("api/",include("apps.certificates.urls")),
     
 
 ]
