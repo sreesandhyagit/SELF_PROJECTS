@@ -9,6 +9,7 @@ from apps.lessons.models import Lesson
 from apps.courses.models import Course
 from apps.enrollments.models import Enrollment
 from .services import generate_certificate
+from apps.notifications.services import create_notification
 
 # Create your views here.
 
@@ -55,6 +56,13 @@ class CertificateViewSet(ModelViewSet):
             certificate.certificate_file=file_path
             certificate.save()
         serializer=self.get_serializer(certificate)
+
+        create_notification(
+            user=request.user,
+            title="Certificate Ready",
+            message=f"Your certificate for {course.title} is ready to download",
+            ntype="CERTIFICATE"
+        )
         return Response(serializer.data)
     
             

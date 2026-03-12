@@ -5,7 +5,7 @@ from rest_framework import status
 from .models import Enrollment
 from .serializers import EnrollmentSerializer
 from apps.courses.models import Course
-
+from apps.notifications.services import create_notification
 
 # Create your views here.
 
@@ -26,6 +26,12 @@ class EnrollmentViewSet(ModelViewSet):
         #auto enroll free course
         if course.is_free:
             enrollment, created = Enrollment.objects.get_or_create(user=request.user,course=course)
+            create_notification(
+                user=request.user,
+                title="Course Enrolled",
+                message=f"You successfully enrolled in {course.title}",
+                ntype="ENROLLMENT"
+            )
             return Response({"message":"Enrolled in free course"})
         else:
             #simulate payment -paid course
@@ -35,6 +41,13 @@ class EnrollmentViewSet(ModelViewSet):
             enrollment, created=Enrollment.objects.get_or_create(user=request.user,course=course)
 
         serializer=self.get_serializer(enrollment)
+
+        create_notification(
+            user=request.user,
+            title="Course Enrolled",
+            message=f"You successfully enrolled in {course.title}",
+            ntype="ENROLLMENT"
+        )
 
         return Response({
             "message":"Enrolled successfully",

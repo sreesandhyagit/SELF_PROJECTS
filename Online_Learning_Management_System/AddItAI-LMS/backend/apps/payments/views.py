@@ -6,6 +6,7 @@ from .models import Payment
 from .serializers import PaymentSerializer
 from apps.orders.models import Order
 from apps.enrollments.models import Enrollment
+from apps.notifications.services import create_notification
 
 # Create your views here.
 class PaymentViewSet(ModelViewSet):
@@ -70,6 +71,13 @@ class PaymentViewSet(ModelViewSet):
 
         #enroll user to courses
         Enrollment.objects.get_or_create(user=request.user,course=order.course)
+
+        create_notification(
+            user=request.user,
+            title="Payment Successful",
+            message=f"Your payment for{order.course.title} was successful",
+            ntype="PAYMENT"
+        )
 
         return Response({"message":"Payment successful","order":order.id,"payment_id":payment_id})
     
