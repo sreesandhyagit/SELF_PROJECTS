@@ -10,6 +10,7 @@ from apps.courses.models import Course
 from apps.enrollments.models import Enrollment
 from .services import generate_certificate
 from apps.notifications.services import create_notification
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -23,7 +24,8 @@ class CertificateViewSet(ModelViewSet):
     @action(detail=False,methods=["post"])
     def generate(self,request):
         course_id=request.data.get("course")
-        course=Course.objects.filter(id=course_id).first()
+        # course=Course.objects.filter(id=course_id).first()
+        course=get_object_or_404(Course,id=course_id)
         if not course:
             return Response({"error":"Course not found"})
         
