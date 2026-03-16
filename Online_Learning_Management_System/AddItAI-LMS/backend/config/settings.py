@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     "apps.reviews",    
     "apps.certificates",
     "apps.notifications",
-    "apps.doubts"
+    "apps.doubts",
+    "apps.dashboard",
     
 
 ]

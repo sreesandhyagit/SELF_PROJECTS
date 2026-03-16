@@ -116,11 +116,3 @@ class InstructorRequest(models.Model):
         super().save(*args,**kwargs)
 
 
-        
-        
-    
-
-   
-    
-
-

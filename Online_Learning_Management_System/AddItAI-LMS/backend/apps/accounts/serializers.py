@@ -108,7 +108,3 @@ class InstructorRequestSerializer(serializers.ModelSerializer):
         fields = ['id','reason','status','submitted_at']
         read_only_fields = ['status','submitted_at']
 
-
-
-        
-        
