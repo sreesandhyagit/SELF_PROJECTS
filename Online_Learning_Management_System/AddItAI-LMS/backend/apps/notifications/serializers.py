@@ -10,6 +10,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             "message",
             "notification_type",
             "is_read",
+            "redirect_url",
             "created_at"
         ]
         

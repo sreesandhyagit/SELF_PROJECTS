@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.response import Response
 from apps.payouts.models import Payout
 from django.shortcuts import get_object_or_404
+from apps.notifications.services import create_notification
 
 # Create your views here.
 
@@ -55,6 +56,12 @@ class ApprovePayoutView(APIView):
         payout=get_object_or_404(Payout,id=id)
         payout.status="APPROVED"
         payout.save()
+        create_notification(
+            user=payout.instructor,
+            title="Payout Approved",
+            message=f"{payout.amount} approved",
+            ntype="PAYOUT"
+        )
         return Response({"message":"Payment approved"})
     
 class MarkPayoutPaidView(APIView):

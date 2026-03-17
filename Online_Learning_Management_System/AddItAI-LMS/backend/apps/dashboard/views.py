@@ -10,8 +10,10 @@ from apps.reviews.models import Review
 from apps.doubts.models import Doubt
 from apps.progress.models import LessonProgress
 from apps.certificates.models import Certificate
+from apps.notifications.models import Notification
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import TruncMonth
+from apps.notifications.services import create_notification
 
 
 # Create your views here.
@@ -59,6 +61,15 @@ class InstructorDashboardView(APIView):
             course__instructor=instructor
         ).aggregate(avg=Avg("rating"))["avg"] or 0
 
+        unread_notifications = Notification.objects.filter(
+            user=request.user,
+            is_read=False
+        ).count()
+
+        recent_notifications = Notification.objects.filter(
+            user=request.user
+        )[:5]
+
         data={
             "my_courses":courses.count(),
             "pending_courses":courses.filter(status="PENDING").count(),
@@ -67,7 +78,9 @@ class InstructorDashboardView(APIView):
             "total_students":enrollments.count(),
             "revenue":revenue,
             "average_rating":round(avg_rating,2),
-            "pending_doubts":Doubt.objects.filter(lesson__section__course__instructor=instructor,status="OPEN").count()
+            "pending_doubts":Doubt.objects.filter(lesson__section__course__instructor=instructor,status="OPEN").count(),
+            "unread_notifications": unread_notifications,
+            "recent_notifications": recent_notifications.values("title","message","created_at")
         }
         return Response(data)
     
@@ -80,13 +93,16 @@ class StudentDashboardView(APIView):
         enrollments=Enrollment.objects.filter(user=user)
         completed_lessons=LessonProgress.objects.filter(user=user,is_completed=True).count()
         certificates=Certificate.objects.filter(user=user)
+        notifications = Notification.objects.filter(user=request.user)[:5]
+
         data={
             "enrolled_courses":enrollments.count(),
             "completed_lessons":completed_lessons,
             "completed_courses":certificates.count(),
             "certificates":certificates.count(),
             "my_doubts":Doubt.objects.filter(user=user).count(),
-            "my_reviews":Review.objects.filter(user=user).count()
+            "my_reviews":Review.objects.filter(user=user).count(),
+            "notifications": notifications.values("title","message","created_at")
         }
         return Response(data)
     
@@ -108,6 +124,13 @@ class ApproveInstructorView(APIView):
         user.is_instructor_approved=True
         user.role="INSTRUCTOR"
         user.save()
+        create_notification(
+            user=user,
+            title="Instructor Approved",
+            message="You are now an approved instructor",
+            ntype="SYSTEM",
+            actor=request.user
+        )
         return Response({"message":"Instructor approved"})
     
     
@@ -136,8 +159,20 @@ class ApproveCourseView(APIView):
 
     def post(self,request,slug):
         course=get_object_or_404(Course,slug=slug)
+        
+        if course.status == "APPROVED":
+            return Response({"message":"Course already approved"})
+        
         course.status="APPROVED"
         course.save()
+        create_notification(
+            user=course.instructor,
+            title="Course Approved",
+            message=f"Your course '{course.title}' is approved",
+            ntype="COURSE",
+            actor=request.user,
+            redirect_url=f"/courses/{course.slug}/"
+        )
         return Response({"message":"Course Approved"})
     
 

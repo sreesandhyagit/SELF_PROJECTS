@@ -56,10 +56,12 @@ class DoubtViewSet(ModelViewSet):
             reply=serializer.save(doubt=doubt,user=request.user)
             #notify student
             create_notification(
-                user=doubt.student,
-                title="Doubt Answered",
+                user=doubt.user,
+                title="New Reply",
                 message=f"Instructor replied to your doubt in {doubt.lesson.title}",
-                ntype="QNA"
+                ntype="QNA",
+                actor=request.user,
+                redirect_url=f"/courses/{doubt.lesson.section.course.slug}/learn/"
             )        
             return Response(serializer.data)
         return Response(serializer.errors,status=400)

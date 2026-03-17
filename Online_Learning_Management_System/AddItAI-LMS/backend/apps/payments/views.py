@@ -72,11 +72,21 @@ class PaymentViewSet(ModelViewSet):
         #enroll user to courses
         Enrollment.objects.get_or_create(user=request.user,course=order.course)
 
+        #student notification
         create_notification(
             user=request.user,
-            title="Payment Successful",
-            message=f"Your payment for{order.course.title} was successful",
-            ntype="PAYMENT"
+            title="Enrollment Successful",
+            message=f"You enrolled in {order.course.title}",
+            ntype="ENROLLMENT",
+            url=f"/courses/{order.course.slug}/learn/"
+        )
+
+        #instructor notification (YOUR CODE)
+        create_notification(
+            user=order.course.instructor,
+            title="New Enrollment",
+            message=f"{request.user.username} enrolled in '{course.title}'",
+            ntype="ENROLLMENT"
         )
 
         return Response({"message":"Payment successful","order":order.id,"payment_id":payment_id})

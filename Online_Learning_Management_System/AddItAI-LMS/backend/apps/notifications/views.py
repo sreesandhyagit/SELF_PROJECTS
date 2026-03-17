@@ -4,15 +4,27 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Notification
 from .serializers import NotificationSerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser
+from apps.accounts.models import User
+from apps.notifications.services import create_notification
+from .pagination import NotificationPagination
 
 # Create your views here.
 
 class NotificationViewSet(ModelViewSet):
     serializer_class=NotificationSerializer
     permission_classes=[IsAuthenticated]
+    pagination_class = NotificationPagination
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        qs = Notification.objects.filter(user=self.request.user)
+
+        ntype = self.request.query_params.get("type")
+        if ntype:
+            qs = qs.filter(notification_type=ntype)
+
+        return qs.order_by("-created_at")
     
     #mark notification as read
     @action(detail=True,methods=["post"])
@@ -40,3 +52,20 @@ class NotificationViewSet(ModelViewSet):
         ).count()
         return Response({"unread_notifications":count})
     
+class BroadcastNotificationView(APIView):
+    permission_classes=[IsAdminUser]
+
+    def post(self,request):
+        users = User.objects.all()
+        title = request.data.get("title")
+        message = request.data.get("message")
+        notifications = [
+            Notification(
+                user=user,
+                title=title,
+                message=message
+            )
+            for user in users
+        ]
+        Notification.objects.bulk_create(notifications)
+        return Response({"message":"Notification sent to all users"})

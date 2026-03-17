@@ -7,6 +7,7 @@ from .models import Notification
 class NotificationAdmin(admin.ModelAdmin):
     list_display=[
         "user",
+        "actor",
         "title",
         "notification_type",
         "is_read",

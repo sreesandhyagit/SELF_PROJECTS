@@ -7,6 +7,7 @@ from .models import Order
 from .serializers import OrderSerializer
 from apps.courses.models import Course
 from apps.enrollments.models import Enrollment
+from apps.notifications.services import create_notification
 
 # Create your views here.
 
@@ -44,6 +45,23 @@ class OrderViewSet(ModelViewSet):
         # free course - enroll directly
         if course.is_free:
             Enrollment.objects.get_or_create(user=user, course=course)
+            #student notification
+            create_notification(
+                user=request.user,
+                title="Enrollment Successful",
+                message=f"You enrolled in {course.title}",
+                ntype="ENROLLMENT",
+                url=f"/courses/{course.slug}/learn/"
+            )
+
+            #instructor notification
+            create_notification(
+                user=course.instructor,
+                title="New Enrollment",
+                message=f"{request.user.username} enrolled in '{course.title}'",
+                ntype="ENROLLMENT"
+            )
+
             return Response({"message": "Enrolled in free course"})
         
         #check existing pending order

@@ -12,12 +12,16 @@ class Notification(models.Model):
         ("PAYMENT","Payment"),
         ("CERTIFICATE","Certificate"),
         ("QNA","Question & Answer"),
+        ("COURSE","Course"),
+        ("PAYOUT","Payout"),
         ("SYSTEM","System"),
     ]
     user=models.ForeignKey(User,on_delete=models.CASCADE,related_name="notifications")
+    actor=models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL,related_name="sent_notifications")
     title=models.CharField(max_length=255)
     message=models.TextField()
     notification_type=models.CharField(max_length=20,choices=NOTIFICATION_TYPES,default="SYSTEM")
+    redirect_url=models.CharField(max_length=255,blank=True,null=True)
     is_read=models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
 
