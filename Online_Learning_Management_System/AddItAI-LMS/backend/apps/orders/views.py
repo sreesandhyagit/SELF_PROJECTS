@@ -29,38 +29,50 @@ class OrderViewSet(ModelViewSet):
             return Response({"error":"course field required"},status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            course = Course.objects.get(id=course_id)
-            
+            course = Course.objects.get(id=course_id)            
         except Course.DoesNotExist:
             return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
         
+        user=request.user
+        
         #check already enrolled
-        already_enrolled=Enrollment.objects.filter(user=request.user,course=course).exists()
+        already_enrolled=Enrollment.objects.filter(user=user,course=course).exists()
         
         if already_enrolled:
             return Response({"error":"You are already enrolled in this course"},status=status.HTTP_400_BAD_REQUEST)
         
         # free course - enroll directly
         if course.is_free:
-            Enrollment.objects.get_or_create(user=request.user, course=course)
+            Enrollment.objects.get_or_create(user=user, course=course)
             return Response({"message": "Enrolled in free course"})
         
         #check existing pending order
-        pending_order=Order.objects.filter(user=request.user,course=course,status="PENDING").first()
+        pending_order=Order.objects.filter(user=user,course=course,status="PENDING").first()
 
         if pending_order:
-            serializer=self.get_serializer(pending_order)
-            return Response(serializer.data)
+            return Response({
+                "message":"Pending order already exists",
+                "order":self.get_serializer(pending_order).data
+            })
         
         #create new order
-        order = Order.objects.create(
-            user=request.user,
-            course=course,
-            amount=course.price,
-            status="PENDING"
-        )
-        serializer = self.get_serializer(order)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            order = Order.objects.create(
+                user=request.user,
+                course=course,
+                amount=course.price or 0,
+                status="PENDING"
+            )
+        except Exception as e:
+            return Response({
+                "error":"Order Creation failed",
+                "details":str(e)
+            },status=status.HTTP_400_BAD_REQUEST)        
+        
+        return Response({
+            "message":"Order created successfully",
+            "order":self.get_serializer(order).data
+        }, status=status.HTTP_201_CREATED)
     
     '''
     # simulate payment success

@@ -36,8 +36,7 @@ class Order(models.Model):
     created_at=models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering=["-created_at"]
-        unique_together=["user","course"]
+        ordering=["-created_at"]        
         indexes=[
             models.Index(fields=["user","status"]),
         ]
