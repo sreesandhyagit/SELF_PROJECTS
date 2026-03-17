@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.doubts",
     "apps.dashboard",
+    "apps.payouts"
     
 
 ]

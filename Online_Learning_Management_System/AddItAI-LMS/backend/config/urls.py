@@ -23,7 +23,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.accounts.urls')),
-    path('api/dashboard/',include("apps.dashboard.urls")),
+    path('api/',include("apps.dashboard.urls")),
 
     path('api/categories/', include('apps.categories.urls')),
     path('api/courses/',include('apps.courses.urls')),
@@ -34,6 +34,7 @@ urlpatterns = [
     path("api/", include("apps.orders.urls")),    
     path("api/", include("apps.payments.urls")),
     path('api/',include('apps.enrollments.urls')),
+    path('"api/',include("apps.payouts.urls")),
     
     path("api/", include("apps.reviews.urls")),
     path("api/",include("apps.certificates.urls")),
