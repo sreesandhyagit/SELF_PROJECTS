@@ -65,7 +65,7 @@ const Navbar = () => {
 
       <div className="flex items-center gap-4">
 
-        <Link to="/teach" className="hidden md:block hover:text-blue-600 transition hover:bg-gray-100 rounded">
+        <Link to="/" className="hidden md:block hover:text-blue-600 transition hover:bg-gray-100 rounded">
           Teach with us
         </Link>
         
@@ -112,11 +112,18 @@ const Navbar = () => {
               >
                 {user?.profile_image ? (
                   <img
-                    src={user.profile_image}
+                    src={
+                    user?.profile_image?.startsWith("http")
+                        ? user.profile_image
+                        : `http://127.0.0.1:8000${user.profile_image}`
+                    }
+                    alt="profile"
                     className="w-9 h-9 rounded-full object-cover"
                   />
                 ) : (
-                  user?.username?.charAt(0).toUpperCase()
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                    {(user?.username?.[0] || "U").toUpperCase()}
+                  </div>
                 )}
               </div>
 
@@ -130,23 +137,23 @@ const Navbar = () => {
 
                   <button
                     onClick={() => {
+                      navigate("/");
+                      setOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Dashboard
+                  </button>
+
+                  <button
+                    onClick={() => {
                       navigate("/profile");
                       setOpen(false);
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
-                    View Profile
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigate("/profile/edit");
-                      setOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Edit Profile
-                  </button>
+                    Profile
+                  </button>                 
 
                   <button
                     onClick={() => {
@@ -164,7 +171,7 @@ const Navbar = () => {
           
           </>
         )}
-        
+
       </div>
     </nav>
   );

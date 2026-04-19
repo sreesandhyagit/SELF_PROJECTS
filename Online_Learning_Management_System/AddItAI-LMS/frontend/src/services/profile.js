@@ -7,9 +7,5 @@ export const getProfile =() => {
 
 //update profile
 export const updateProfile =(FormData) => {
-    return API.patch("profile/", FormData, {
-        headers: {
-            "Content-Type":"multipart/form-data",
-        },
-    });
+    return API.patch("profile/", FormData);
 };

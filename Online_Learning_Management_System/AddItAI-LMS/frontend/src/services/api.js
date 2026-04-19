@@ -3,18 +3,14 @@ import axios from "axios";
 const API =axios.create({baseURL: "http://127.0.0.1:8000/api/",});
 
 // attach token automatically
-
 // request interceptor
 API.interceptors.request.use((req) => {
     const token = localStorage.getItem("access");
-    if (
-        token &&
-        !req.url.includes("login") &&
-        !req.url.includes("register")
-    ) {
+    if (token) {
         req.headers.Authorization = `Bearer ${token}`;
     }
-
+    console.log("Request URL:", req.url);
+    console.log("Token:", token);
     return req;
 });
 
@@ -45,6 +41,10 @@ API.interceptors.response.use(
             const newAccess = res.data.access;
 
             localStorage.setItem("access", newAccess);
+            
+            if (!originalRequest.headers) {
+                originalRequest.headers = {};
+            }
 
             // retry original request
             originalRequest.headers.Authorization = `Bearer ${newAccess}`;
