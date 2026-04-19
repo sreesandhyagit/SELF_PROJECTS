@@ -55,6 +55,8 @@ class UserProfileView(APIView):
         return Response(serializer.data)
     
     def patch(self,request):
+        print(request.data)       
+        print(request.FILES)
         serializer = UserSerializer(request.user,data=request.data,partial=True)
 
         if serializer.is_valid():

@@ -82,7 +82,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile_image = serializers.ImageField(required=False)
+    profile_image = serializers.ImageField(required=False, allow_null=True)
     class Meta:
         model = User
         fields = ['id','username','email','bio','profile_image']
@@ -105,6 +105,30 @@ class InstructorProfileSerializer(serializers.ModelSerializer):
 class InstructorRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = InstructorRequest
-        fields = ['id','reason','status','submitted_at']
+        fields = [
+            'id',
+            'qualification',
+            'experience',
+            'skills',
+            'demo_video',
+            'reason',
+            'status',
+            'submitted_at'
+        ]
         read_only_fields = ['status','submitted_at']
+
+    def validate(self, data):
+        if not data.get("qualification"):
+            raise serializers.ValidationError({"qualification": "Required"})
+        if not data.get("experience"):
+            raise serializers.ValidationError({"experience": "Required"})
+        if not data.get("skills"):
+            raise serializers.ValidationError({"skills": "Required"})
+        return data
+    
+    def validate_demo_video(self, value):
+        if value:
+            if "youtube.com" not in value and "youtu.be" not in value:
+                raise serializers.ValidationError("Only YouTube links allowed")
+        return value
 

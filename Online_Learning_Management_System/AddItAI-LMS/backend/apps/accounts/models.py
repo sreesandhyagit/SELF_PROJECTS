@@ -85,8 +85,14 @@ class InstructorRequest(models.Model):
         REJECTED = "rejected", "Rejected"
 
     user = models.ForeignKey(User,on_delete=models.CASCADE, related_name='instructor_requests')
+
+    qualification = models.CharField(max_length=255, blank=True, null=True)
+    experience = models.TextField(blank=True, null=True)
+    skills = models.TextField(blank=True, null=True)
+    demo_video = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=20, choices = Status.choices, default=Status.PENDING)
     reason = models.TextField(blank=True, null=True)
+
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
     reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='reviewed_requests')
